@@ -1,0 +1,149 @@
+﻿@{
+    ViewData["Title"] = "Universe Map";
+}
+    <body onload="initialize()">
+        <div>
+            <h1>@ViewData["Title"]</h1>
+
+            <p>The beginning of our universe map begins with the earth ...</p>
+
+            <p>Can we begin the discovery of the universe with your address?</p>
+
+            <button onclick="getGeolocation();" type="button" class="btn btn-primary" id="address-button">Yes we can!</button>
+
+            Or Not?
+
+            <button onclick="giveMeAnotherDestination();" type="button" class="btn btn-primary" id="address-button">
+                Give me another destination
+            </button>
+
+            <br /> <br />
+
+            <div id="googleMap" style="width:100%;height:400px">
+
+            </div>
+
+        </div>
+    </body>
+
+    <div>
+        <script>
+            var GOOGLE_MAP_KEY = 'AIzaSyA_51FieTkDxJKR3OfZvbvSla7hKd9x3bU';
+
+            function giveMeAnotherDestination() {
+
+                var locations = [
+                    ['-23.527670', '-46.678724'],
+                    ['41.882588', '-87.622347'],
+                    ['29.977440', '31.131980'],
+                    ['27.173134', '78.042084'],
+                    ['48.858398', '2.294319'],
+                    ['51.478002', '-0.000641'],
+                    ['24.461810', '54.317230']
+                ];
+
+                var random = Math.floor(Math.random() * 7);
+
+                var latIn = locations[random][0];
+                var longIn = locations[random][1];
+
+                console.log('latitude ' + latIn +
+                    ' longitude ' + longIn);
+
+                myMap(latIn, longIn);
+            }
+
+            function initialize() {
+
+                var mapProp = {
+                    center: new google.maps.LatLng('51.508742', '-0.120850'),
+                    zoom: 17,
+                };
+
+                var map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
+            }
+
+            function myMap(lat, lon) {
+
+                lat = parseFloat(lat);
+                lon = parseFloat(lon);
+
+                var mapProp = {
+                    center: new google.maps.Marker(lat, lon),
+                    zoom: 17
+                };
+
+                var map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
+
+                var resultlatlng = new google.maps.LatLng(lat, lon);
+
+                var marker = new google.maps.Marker({ position: resultlatlng, map: map });
+
+                map.setCenter(resultlatlng);
+            }
+
+            function ipLookUp() {
+                $.ajax('http://ip-api.com/json')
+                    .then(
+                        function success(response) {
+                            console.log('User\'s Location Data is ', response);
+                            console.log('User\'s Country', response.country);
+                        },
+
+                        function fail(data, status) {
+                            console.log('Request failed.  Returned status of',
+                                status);
+                        }
+                    );
+            }
+
+            function getAddress(latitude, longitude) {
+
+                var url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='
+                    + latitude + ',' + longitude + '&key=' + GOOGLE_MAP_KEY;
+
+                console.log("url:" + url);
+
+                $.ajax(url)
+                    .then(
+                        function success(response) {
+
+                            if (response === undefined || response.results === undefined) return;
+
+                            var dataFromCity = response.results.find(obj => { return obj.types.includes('locality'); });
+                            $('#address-found').val(dataFromCity.formatted_address);
+                            $('#address-button').hide();
+                            $('#address-found-input').show();
+
+                            console.log('User\'s Address Data is ' + response);
+                        },
+                        function fail(status) {
+                            console.log('Request failed.  Returned status of' + status);
+                        }
+                    )
+            }
+
+            function getGeolocation() {
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        function success(position) {
+                            console.log('latitude ' + position.coords.latitude +
+                                ' longitude ' + position.coords.longitude);
+
+                            //getAddress(position.coords.latitude, position.coords.longitude);
+
+                            myMap(position.coords.latitude, position.coords.longitude);
+                        },
+                        function error(error_message) {
+                            console.log('An error has occured while retrieving location ' + error_message);
+                            ipLookUp();
+                        });
+                } else {
+                    console.log('geolocation is not enabled on this browser');
+                    ipLookUp();
+                }
+            }
+        </script>
+    </div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA_51FieTkDxJKR3OfZvbvSla7hKd9x3bU&callback=myMap"></script>
